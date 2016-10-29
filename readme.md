@@ -12,6 +12,11 @@ but in a different language? So I did it. And so began a tradition to make this
 part of every new language I learn. I figured it was about time to get them all
 in one place.
 
+The purpose of this is two things. Most importantly, it gives me much-needed
+practice with a language I've just learned. Second, it also gives me something
+to show others, to show others that I know these languages, and that I am able
+to write a functioning program in them. And that I know how to use git, I guess.
+
 
 ## To Do
 
