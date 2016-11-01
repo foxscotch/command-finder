@@ -29,4 +29,14 @@ functioning program in them. And that I know how to use git, I guess.
  - C - I kind of know C. I haven't touched it in a while, but a little less than
    two years ago I would've told you I was familiar with it. Probably coming up
    after C#.
+ - Lua - A language I know, but haven't had much practice in, like C.
+ - Rust - Just interested.
+ - Go - Again, interested. Particularly so, in fact.
+ - Swift? - Seems interesting, but I don't have a Mac, and I don't use Linux
+   full-time, so its usefulness may be limited for now.
  - ???
+
+I suppose this could also be used as a way for me to keep up with the languages
+I know or want to know. So you can see that there, too. I guess you'll just have
+to take my word for it, when it comes to those I haven't written this in, until
+I do so.
