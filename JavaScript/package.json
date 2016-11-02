@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "JavaScript implementation of my CommandFinder",
   "main": "command-finder.js",
-  "author": "damienmh",
+  "author": "Damien Howard <damienmhoward@gmail.com>",
   "license": "MIT",
   "dependencies": {
     "fs-extra": "1.0.0",
