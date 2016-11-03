@@ -1,4 +1,4 @@
-const fs = require('fs-extra');
+const path = require('path');
 const jszip = require('jszip');
 
 const args = require('yargs')
