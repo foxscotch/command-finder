@@ -9,10 +9,22 @@ const args = getArgs();
 const commands = {};
 
 
-function searchScript(buffer) {}
+function searchScript(filename, buffer) {
+  if (!buffer) {
+    try {
+      buffer = fs.createReadStream(filename);
+    } catch (e) {
+      if (e.code === 'ENOENT') {
+        console.log(`searchScript was passed a filename without a buffer, and
+          the filename did not exist on the file system.`);
+        throw e;
+      }
+    }
+  }
+}
 
 function searchFolder(filename) {
-  if (path.basename(filename) !== args.folder) {
+  if (filename !== args.folder) {
     commands[path.basename(filename)] = {};
   }
 
@@ -21,13 +33,15 @@ function searchFolder(filename) {
       throw err;
 
     for (let item of items) {
+      item = path.resolve(process.cwd(), filename, item);
+
       fs.stat(item, (err, stats) => {
         if (err)
           throw err;
         
         if (stats.isDirectory()) {
           searchFolder(item);
-        } else if (path.extname(filename) === '.zip') {
+        } else if (path.extname(item) === '.zip') {
           searchZip(item);
         } else {
           searchScript(fs.createReadStream(item));
@@ -38,6 +52,10 @@ function searchFolder(filename) {
 }
 
 function searchZip(filename) {
+  if (path.basename(filename) !== args.folder) {
+    commands[path.basename(filename)] = {};
+  }
+
   fs.readFile(filename, (err, data) => {
     if (err)
       throw err;
@@ -45,7 +63,7 @@ function searchZip(filename) {
     jszip.loadAsync(data).then(zip => {
       zip.forEach((relativePath, file) => {
         if (!file.dir && path.extname(relativePath) === '.cs') {
-          searchScript(file.nodeStream());
+          searchScript(relativePath, file.nodeStream());
         }
       });
     });
@@ -79,7 +97,16 @@ function getArgs() {
 }
 
 function main() {
-  searchFolder(args.folder, commands);
+  const start = process.hrtime();
+
+  searchFolder(args.folder);
+  
+  process.on('exit', () => {
+    console.log(commands);
+
+    let end = process.hrtime(start);
+    console.log(`Time taken: ${end[0] + end[1] * 10e-10}`);
+  });
 }
 
 main();
