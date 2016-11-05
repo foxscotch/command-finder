@@ -6,34 +6,47 @@ const jszip = require('jszip');
 
 
 const args = getArgs();
+const cmdRegex = /\s*function serverCmd([\w\d]+)\s*\(([%\w\d,\s]+)*\)/g;
 const commands = {};
 
 
-function searchScript(filename, buffer) {
-  if (!buffer) {
+function searchScript(parentName, fileName, contents) {
+  if (!contents) {
     try {
-      buffer = fs.createReadStream(filename);
+      contents = fs.readFileSync(fileName);
     } catch (e) {
       if (e.code === 'ENOENT') {
-        console.log(`searchScript was passed a filename without a buffer, and
-          the filename did not exist on the file system.`);
+        console.log(`searchScript was passed a fileName without a buffer, and
+          the fileName did not exist on the file system.`);
         throw e;
       }
     }
   }
+
+  const parent = commands[path.basename(parentName)];
+  parent[path.basename(fileName)] = {};
+
+  let result = true;
+
+  while (result !== null) {
+    result = cmdRegex.exec(contents);
+    if (result !== null) {
+      parent[path.basename(fileName)][result[1]] = result[2].split(/\s*,\s*/g);
+    }
+  }
 }
 
-function searchFolder(filename) {
-  if (filename !== args.folder) {
-    commands[path.basename(filename)] = {};
+function searchFolder(fileName) {
+  if (fileName !== args.folder) {
+    commands[path.basename(fileName)] = {};
   }
 
-  fs.readdir(filename, (err, items) => {
+  fs.readdir(fileName, (err, items) => {
     if (err)
       throw err;
 
     for (let item of items) {
-      item = path.resolve(process.cwd(), filename, item);
+      item = path.resolve(process.cwd(), fileName, item);
 
       fs.stat(item, (err, stats) => {
         if (err)
@@ -44,26 +57,32 @@ function searchFolder(filename) {
         } else if (path.extname(item) === '.zip') {
           searchZip(item);
         } else {
-          searchScript(fs.createReadStream(item));
+          fs.readFile(item, (err, contents) => {
+            searchScript(flieName, item, contents);
+          });
         }
       });
     }
   });
 }
 
-function searchZip(filename) {
-  if (path.basename(filename) !== args.folder) {
-    commands[path.basename(filename)] = {};
+function searchZip(fileName) {
+  if (path.basename(fileName) !== args.folder) {
+    commands[path.basename(fileName)] = {};
   }
 
-  fs.readFile(filename, (err, data) => {
+  fs.readFile(fileName, (err, data) => {
     if (err)
       throw err;
 
     jszip.loadAsync(data).then(zip => {
       zip.forEach((relativePath, file) => {
         if (!file.dir && path.extname(relativePath) === '.cs') {
-          searchScript(relativePath, file.nodeStream());
+          file.async('string').then(contents => {
+            searchScript(fileName, relativePath, contents);
+          }).catch(err => {
+            console.log(err);
+          });
         }
       });
     });
@@ -96,16 +115,29 @@ function getArgs() {
   .argv;
 }
 
+function commandsToJson() {
+  return JSON.stringify(commands, (key, val) => {
+    if (Object.values(val).length === 0) {
+      return undefined;
+    } else {
+      return val;
+    }
+  }, 2);
+}
+
+// function commandsToTxt() {}
+
 function main() {
   const start = process.hrtime();
 
   searchFolder(args.folder);
   
   process.on('exit', () => {
-    console.log(commands);
-
     let end = process.hrtime(start);
-    console.log(`Time taken: ${end[0] + end[1] * 10e-10}`);
+
+    fs.writeFileSync(`${args.out}.${args.type}`, commandsToJson());
+    console.log(`Time taken: ${end[0] + end[1] * 10e-10}`,
+      `\nOutput can be found in ${args.out}.${args.type}`);
   });
 }
 
